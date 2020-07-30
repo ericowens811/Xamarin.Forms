@@ -7,10 +7,10 @@ namespace Xamarin.Forms
 		readonly Layout<View> _layout;
 
 		string _groupName;
-		private object _selection;
+		private object _selectedValue;
 
 		public string GroupName { get => _groupName; set => SetGroupName(value); }
-		public object SelectedValue { get => _selection; set => SetSelection(value); }
+		public object SelectedValue { get => _selectedValue; set => SetSelectedValue(value); }
 
 		public RadioButtonGroupController(Layout<View> layout)
 		{
@@ -28,22 +28,21 @@ namespace Xamarin.Forms
 			}
 
 			MessagingCenter.Subscribe<RadioButton, RadioButtonGroupSelectionChanged>(this, 
-				RadioButtonGroup.RadioButtonGroupSelectionChanged, HandleRadioButtonGroupSelectionChanged);
-			MessagingCenter.Subscribe<RadioButton, RadioButtonGroupNameChanged>(this, RadioButtonGroup.RadioButtonGroupNameChanged,
+				RadioButtonGroup.GroupSelectionChangedMessage, HandleRadioButtonGroupSelectionChanged);
+			MessagingCenter.Subscribe<RadioButton, RadioButtonGroupNameChanged>(this, RadioButton.GroupNameChangedMessage,
 				HandleRadioButtonGroupNameChanged);
-			MessagingCenter.Subscribe<RadioButton, RadioButtonValueChanged>(this, RadioButtonGroup.RadioButtonValueChanged,
+			MessagingCenter.Subscribe<RadioButton, RadioButtonValueChanged>(this, RadioButton.ValueChangedMessage,
 				HandleRadioButtonValueChanged);
+		}
+
+		bool MatchesScope(RadioButtonScopeMessage message) 
+		{
+			return RadioButtonGroup.GetVisualRoot(_layout) == message.Scope;
 		}
 
 		void HandleRadioButtonGroupSelectionChanged(RadioButton selected, RadioButtonGroupSelectionChanged args)
 		{
-			if (selected.GroupName != _groupName)
-			{
-				return;
-			}
-
-			var controllerScope = RadioButtonGroup.GetVisualRoot(_layout);
-			if (args.Scope != controllerScope)
+			if (selected.GroupName != _groupName || !MatchesScope(args))
 			{
 				return;
 			}
@@ -53,13 +52,7 @@ namespace Xamarin.Forms
 
 		void HandleRadioButtonGroupNameChanged(RadioButton radioButton, RadioButtonGroupNameChanged args) 
 		{
-			if (args.OldName != _groupName)
-			{
-				return;
-			}
-
-			var controllerScope = RadioButtonGroup.GetVisualRoot(_layout);
-			if (args.Scope != controllerScope)
+			if (args.OldName != _groupName || !MatchesScope(args))
 			{
 				return;
 			}
@@ -69,13 +62,7 @@ namespace Xamarin.Forms
 
 		void HandleRadioButtonValueChanged(RadioButton radioButton, RadioButtonValueChanged args)
 		{
-			if (radioButton.GroupName != _groupName)
-			{
-				return;
-			}
-
-			var controllerScope = RadioButtonGroup.GetVisualRoot(_layout);
-			if (args.Scope != controllerScope)
+			if (radioButton.GroupName != _groupName || !MatchesScope(args))
 			{
 				return;
 			}
@@ -90,11 +77,24 @@ namespace Xamarin.Forms
 				return;
 			}
 
-			if(!(e.Element is RadioButton radioButton))
+			if (e.Element is RadioButton radioButton)
 			{
-				return;
+				AddRadioButton(radioButton);
 			}
+			else
+			{
+				foreach (var element in e.Element.Descendants())
+				{
+					if (element is RadioButton radioButton1)
+					{
+						AddRadioButton(radioButton1);
+					}
+				}			
+			}
+		}
 
+		void AddRadioButton(RadioButton radioButton) 
+		{
 			UpdateGroupName(radioButton, _groupName);
 
 			if (radioButton.IsChecked)
@@ -126,17 +126,14 @@ namespace Xamarin.Forms
 			}
 		}
 
-		void SetSelection(object radioButtonValue)
+		void SetSelectedValue(object radioButtonValue)
 		{
-			_selection = radioButtonValue;
+			_selectedValue = radioButtonValue;
 
 			if (radioButtonValue != null)
 			{
-				var radioButton = RadioButtonGroup.GetRadioButtonWithValue(radioButtonValue, _groupName);
-				if (radioButton != null)
-				{
-					radioButton.IsChecked = true;
-				}
+				MessagingCenter.Send(_layout, RadioButtonGroup.GroupValueChangedMessage, 
+					new RadioButtonGroupValueChanged(_groupName, RadioButtonGroup.GetVisualRoot(_layout), radioButtonValue));
 			}
 		}
 

@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Configuration;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
@@ -26,6 +24,23 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			layout.SetValue(RadioButtonGroup.GroupNameProperty, groupName);
 			layout.Children.Add(radioButton);
+
+			Assert.That(radioButton.GroupName, Is.EqualTo(groupName));
+		}
+
+		[Test]
+		public void NestedRadioButtonAddedToGroupGetsGroupName()
+		{
+			var layout = new StackLayout();
+			var groupName = "foo";
+			var radioButton = new RadioButton();
+
+			layout.SetValue(RadioButtonGroup.GroupNameProperty, groupName);
+
+
+			var grid = new Grid();
+			grid.Children.Add(radioButton);
+			layout.Children.Add(grid);
 
 			Assert.That(radioButton.GroupName, Is.EqualTo(groupName));
 		}

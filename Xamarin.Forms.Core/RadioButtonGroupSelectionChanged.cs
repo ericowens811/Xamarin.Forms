@@ -1,28 +1,41 @@
 ﻿namespace Xamarin.Forms
 {
-	internal class RadioButtonGroupSelectionChanged
+	internal abstract class RadioButtonScopeMessage 
 	{
 		public Element Scope { get; }
 
-		public RadioButtonGroupSelectionChanged(Element scope) => Scope = scope;
+		protected RadioButtonScopeMessage(Element scope) => Scope = scope;
 	}
 
-	internal class RadioButtonGroupNameChanged
+	internal class RadioButtonGroupSelectionChanged : RadioButtonScopeMessage
 	{
-		public Element Scope { get; }
+		public RadioButtonGroupSelectionChanged(Element scope) : base(scope) { }
+	}
+
+	internal class RadioButtonGroupNameChanged : RadioButtonScopeMessage
+	{
 		public string OldName { get; }
 
-		public RadioButtonGroupNameChanged(Element scope, string oldName)
+		public RadioButtonGroupNameChanged(Element scope, string oldName) : base(scope)
 		{
-			Scope = scope;
 			OldName = oldName;
 		}
 	}
 
-	internal class RadioButtonValueChanged
+	internal class RadioButtonValueChanged : RadioButtonScopeMessage
 	{
-		public Element Scope { get; }
+		public RadioButtonValueChanged(Element scope) : base(scope) { }
+	}
 
-		public RadioButtonValueChanged(Element scope) => Scope = scope;
+	internal class RadioButtonGroupValueChanged : RadioButtonScopeMessage
+	{
+		public object Value { get; }
+		public string GroupName { get; }
+
+		public RadioButtonGroupValueChanged(string groupName, Element scope, object value) : base(scope)
+		{
+			GroupName = groupName;
+			Value = value;
+		}
 	}
 }
